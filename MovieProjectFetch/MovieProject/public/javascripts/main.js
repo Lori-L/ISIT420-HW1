@@ -1,65 +1,65 @@
 
-let movieArray = [];
+//let orderArray = [];
+let storeArray = [98053, 98007, 98077, 98055, 98011, 98046];
+let CdArray = [123456, 123654, 321456, 321654, 654123];
 
-// define a constructor to create movie objects
-let MovieObject = function (pTitle, pYear, pGenre, pMan, pWoman, pURL) {
-    this.ID = Math.random().toString(16).slice(5)  // tiny chance could get duplicates!
-    this.Title = pTitle;
-    this.Year = pYear;
-    this.Genre = pGenre;  // action  comedy  drama  horrow scifi  musical  western
+// define a constructor to create order objects
+let OrderObject = function (pStore, pSalesPerson, pCd, pPrice, pDate) {
+    this.StoreID = pStore;  
+    this.SalesPersonID = pSalesPerson;
+    this.CdID = pCd;
+    this.PricePaid = pPrice;
+    this.Date = pDate;
 }
-
-let selectedGenre = "not selected";
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    createList();
 
 // add button events ************************************************************************
     
-    document.getElementById("buttonAdd").addEventListener("click", function () {
-        let newMovie = new MovieObject(document.getElementById("title").value, 
-        document.getElementById("year").value, selectedGenre);
+    document.getElementById("buttonSubmitOne").addEventListener("click", function () {
+        let newOrder = createOrder();
 
-        fetch('/AddMovie', {
+        fetch('/AddOrder', {
             method: "POST",
-            body: JSON.stringify(newMovie),
+            body: JSON.stringify(newOrder),
             headers: {"Content-type": "application/json; charset=UTF-8"}
             })
             .then(response => response.json()) 
-            .then(json => console.log(json),
-            createList()
-            )
+            .then(json => console.log(json))
             .catch(err => console.log(err));
     
-        // $.ajax({
-        //     url : "/AddMovie",
-        //     type: "POST",
-        //     data: JSON.stringify(newMovie),
-        //     contentType: "application/json; charset=utf-8",
-        //      success: function (result) {
-        //         console.log(result);
-        //         createList();
-        //     }
-        // });
-       
     });
 
-    document.getElementById("buttonGet").addEventListener("click", function () {
-        createList();      
+    document.getElementById("buttonSubmit500").addEventListener("click", function(){
+        let orderArray = [];
+        let dateAddition = 0;
+
+        for (let i = 0; i < 500; i++) { //Generates 500 orders
+            orderArray.push(createOrder());
+        }
+
+        orderArray.forEach(order => { //Changes dates on orders past 1
+            order.Date += dateAddition;
+
+            dateAddition += Math.floor((Math.random() * 25001) + 5000); //Between 5000 and 30000
+        });
+
+        console.log(orderArray);
+
+        fetch('/AddOrders500', {
+            method: "POST",
+            body: JSON.stringify(orderArray),
+            headers: {"Content-type": "application/json; charset=UTF-8"}
+            })
+            .then(response => response.json()) 
+            .then(json => console.log(json))
+            .catch(err => console.log(err));
     });
 
-    document.getElementById("buttonDelete").addEventListener("click", function () {
-        deleteMovie(document.getElementById("deleteID").value);      
-    });
-    
-    document.getElementById("buttonClear").addEventListener("click", function () {
-        document.getElementById("title").value = "";
-        document.getElementById("year").value = "";
-    });
-
-    $(document).bind("change", "#select-genre", function (event, ui) {
-        selectedGenre = $('#select-genre').val();
+    document.getElementById("buttonCreate").addEventListener("click", function () {
+        sampleOrder = createOrder();
+        updateOrderDisplay(sampleOrder);    
     });
 
   
@@ -67,84 +67,43 @@ document.addEventListener("DOMContentLoaded", function () {
 });  
 // end of wait until document has loaded event  *************************************************************************
 
+//Creates and returns one random order. Order date is the time of creation.
+function createOrder(){ 
+    let randStore = storeArray[Math.floor(Math.random() * storeArray.length)];
+    let randCD = CdArray[Math.floor(Math.random() * CdArray.length)];
+    let randPrice = Math.floor((Math.random() * 11) + 5); //Between 5 and 15
+    let tempDate = Date.now();
+    let randSalesPerson;
 
-function createList() {
-// update local array from server
-
-    fetch('/getAllMovies')
-    // Handle success
-    .then(response => response.json())  // get the data out of the response object
-    .then( responseData => fillUL(responseData))    //update our array and li's
-    .catch(err => console.log('Request Failed', err)); // Catch errors
-
-    // $.get("/getAllMovies", function(data, status){  // AJAX get
-    //     movieArray = data;  // put the returned server json data into our local array
-        
-    //       // clear prior data
-    //     var divMovieList = document.getElementById("divMovieList");
-    //     while (divMovieList.firstChild) {    // remove any old data so don't get duplicates
-    //         divMovieList.removeChild(divMovieList.firstChild);
-    //     };
-
-    //     var ul = document.createElement('ul');
-
-    //     movieArray.forEach(function (element,) {   // use handy array forEach method
-    //         var li = document.createElement('li');
-    //         li.innerHTML = element.ID + ":  &nbsp &nbsp  &nbsp &nbsp " + 
-    //         element.Title + "  &nbsp &nbsp  &nbsp &nbsp "  
-    //         + element.Year + " &nbsp &nbsp  &nbsp &nbsp  " + element.Genre;
-    //         ul.appendChild(li);
-    //     });
-    //     divMovieList.appendChild(ul)
-
-    // });
-};
-
-function fillUL(data) {
-        // clear prior data
-    var divMovieList = document.getElementById("divMovieList");
-    while (divMovieList.firstChild) {    // remove any old data so don't get duplicates
-        divMovieList.removeChild(divMovieList.firstChild);
-    };
-
-    var ul = document.createElement('ul');
-    movieArray = data;
-    movieArray.forEach(function (element,) {   // use handy array forEach method
-        var li = document.createElement('li');
-        li.innerHTML = element.ID + ":  &nbsp &nbsp  &nbsp &nbsp " + 
-        element.Title + "  &nbsp &nbsp  &nbsp &nbsp "  
-        + element.Year + " &nbsp &nbsp  &nbsp &nbsp  " + element.Genre;
-        ul.appendChild(li);
-    });
-    divMovieList.appendChild(ul)
+    switch(randStore){ //Assigns a sales person according to the store
+        case 98053:
+            randSalesPerson = Math.floor((Math.random() * 4) + 1); //Between 1 and 4
+            break;
+        case 98007:
+            randSalesPerson = Math.floor((Math.random() * 4) + 5); //Between 5 and 8
+            break;
+        case 98077:
+            randSalesPerson = Math.floor((Math.random() * 4) + 9); //Between 9 and 12
+            break;
+        case 98055:
+            randSalesPerson = Math.floor((Math.random() * 4) + 13); //Between 13 and 16
+            break;
+        case 98011:
+            randSalesPerson = Math.floor((Math.random() * 4) + 17); //Between 17 and 20
+            break;
+        case 98046:
+            randSalesPerson = Math.floor((Math.random() * 4) + 21); //Between 21 and 24
+            break;
+    }
+    
+    newOrder = new OrderObject(randStore, randSalesPerson, randCD, randPrice, tempDate);
+    return newOrder;
 }
-
-function deleteMovie(ID) {
-
-    fetch('/DeleteMovie/' + ID, {
-        method: "DELETE",
-       // body: JSON.stringify(_data),
-        headers: {"Content-type": "application/json; charset=UTF-8"}
-      })
-      .then(response => response.json()) 
-      .then(json => console.log(json))
-      .catch(err => console.log(err));
-
-
-
-    // $.ajax({
-    //     type: "DELETE",
-    //     url: "/DeleteMovie/" +ID,
-    //     success: function(result){
-    //         alert(result);
-    //         createList();
-    //     },
-    //     error: function (xhr, textStatus, errorThrown) {  
-    //         alert("Server could not delete Movie with ID " + ID)
-    //     }  
-    // });
-   
-}
-
-
   
+function updateOrderDisplay(sampleOrder){
+    document.getElementById("sampleStore").innerHTML = "StoreID: " + sampleOrder.StoreID;
+    document.getElementById("sampleSalesPerson").innerHTML = "SalesPersonID: "+sampleOrder.SalesPersonID;
+    document.getElementById("sampleCd").innerHTML = "CdID: "+sampleOrder.CdID;
+    document.getElementById("samplePrice").innerHTML = "PricePaid: "+sampleOrder.PricePaid;
+    document.getElementById("sampleDate").innerHTML = "Date: "+sampleOrder.Date;
+}
