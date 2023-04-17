@@ -34,6 +34,40 @@ fileManager  = {
   },
 }
 
+// add mongoDB support  ===============================
+
+// mongoose is a API wrapper overtop of mongodb, just like
+// .ADO.Net is a wrapper over raw SQL server interface
+const mongoose = require("mongoose");
+
+const OrderSchema = require("../orderSchema");
+
+
+// edited to include my non-admin, user level account and PW on mongo atlas
+// and also to include the name of the mongo DB that the collection is in (MoviesDB)
+const dbURI =
+ "mongodb+srv://loriuser:MongoDBPassword@loricluster.d4zi0le.mongodb.net/isit420?retryWrites=true&w=majority";
+  // Make Mongoose use `findOneAndUpdate()`. Note that this option is `true`
+// by default, you need to set it to false.
+mongoose.set('useFindAndModify', false);
+
+const options = {
+  reconnectTries: Number.MAX_VALUE,
+  poolSize: 10
+};
+
+mongoose.connect(dbURI, options).then(
+  () => {
+    console.log("Database connection established!");
+  },
+  err => {
+    console.log("Error connecting Database instance due to: ", err);
+  }
+);
+
+
+//============================================
+
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -59,22 +93,87 @@ router.post('/AddOrder', function(req, res) {
   res.end(JSON.stringify(response)); // send reply
 });
 
-/* Add 500 new Orders */
+/* Adds 500 new Orders to MongoDB */
 router.post('/AddOrders500', function(req, res) {
-  const newOrders = req.body;  // get the object from the req object sent from browser
-  console.log(newOrders[1]); // write the first order to console to verify that it was received
+  const newOrders = req.body;
+  console.log(newOrders[1]);
+
 
   newOrders.forEach(order => {
-    ServerOrderArray.push(order);
-  });
-  fileManager.write();
+    let oneNewOrder = new OrderSchema(order);  
+    oneNewOrder.save((err, todo) => {
+      if (err) {
+        res.status(500).send(err);
+      }
+      else {
+      // console.log(todo);
+      // res.status(201).json(todo);
 
-  // prepare a reply to the browser
-  var response = {
-    status  : 200,
-    success : 'Added Successfully'
-  }
-  res.end(JSON.stringify(response)); // send reply
+      var response = {
+        status  : 200,
+        success : 'Added Successfully'
+      }
+      res.end(JSON.stringify(response)); // send reply
+
+      }
+    });
+  });
+});
+
+//Finds total money eanred, sorted by sales representative
+//To find which reps are doing well and which ones aren't
+router.get('/getMoneyBySalesRep', function(req, res) {
+  OrderSchema.aggregate([
+    {
+      $match: {SalesPersonID: { $gt: 0, $lt: 25}}
+    },
+
+    {
+      $group: {
+        _id: "$SalesPersonID",
+        totalPrice: {$sum: "$PricePaid"}
+      }
+    },
+    
+    {
+      $sort: {totalPrice: -1}
+    }
+  ]).exec(function(err, AllOrders) {
+    if (err) {
+      console.log(err);
+      res.status(500).send(err);
+    }
+    console.log(AllOrders);
+    res.status(200).json(AllOrders);
+  });
+});
+
+//Finds total money from each CD.
+//To find which CDs are popular / unpopular
+router.get('/getSaleNumbersPerCd', function(req, res) {
+  OrderSchema.aggregate([
+    {
+      $match: {CdID: { $gt: 0, $lt: 654322}}
+    },
+
+    {
+      $group: {
+        _id: "$CdID",
+        totalPrice: {$sum: "$PricePaid"}
+      }
+    },
+    
+    {
+      $sort: {totalPrice: -1}
+    }
+  ]).exec(function(err, AllOrders) {
+    if (err) {
+      console.log(err);
+      res.status(500).send(err);
+    }
+    console.log(AllOrders);
+    res.status(200).json(AllOrders);
+  });
 });
 
 module.exports = router;

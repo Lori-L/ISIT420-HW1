@@ -1,7 +1,7 @@
 
 //let orderArray = [];
 let storeArray = [98053, 98007, 98077, 98055, 98011, 98046];
-let CdArray = [123456, 123654, 321456, 321654, 654123];
+let CdArray = [123456, 123654, 321456, 321654, 654123, 654321, 543216, 354126, 621453, 623451];
 
 // define a constructor to create order objects
 let OrderObject = function (pStore, pSalesPerson, pCd, pPrice, pDate) {
@@ -63,6 +63,25 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
   
+    document.getElementById("buttonRepProfit").addEventListener("click", function() {
+        // update local array from server
+        
+        fetch('/getMoneyBySalesRep')
+        // Handle success
+        .then(response => response.json())  // get the data out of the response object
+        .then( responseData => fillUL(responseData, "Rep "))    //update our array and li's
+        .catch(err => console.log('Request Failed', err)); // Catch errors
+    });
+
+    document.getElementById("buttonCdSales").addEventListener("click", function() {
+        // update local array from server
+        
+        fetch('/getSaleNumbersPerCd')
+        // Handle success
+        .then(response => response.json())  // get the data out of the response object
+        .then( responseData => fillUL(responseData, "CD "))    //update our array and li's
+        .catch(err => console.log('Request Failed', err)); // Catch errors
+    });
 
 });  
 // end of wait until document has loaded event  *************************************************************************
@@ -106,4 +125,24 @@ function updateOrderDisplay(sampleOrder){
     document.getElementById("sampleCd").innerHTML = "CdID: "+sampleOrder.CdID;
     document.getElementById("samplePrice").innerHTML = "PricePaid: "+sampleOrder.PricePaid;
     document.getElementById("sampleDate").innerHTML = "Date: "+sampleOrder.Date;
+}
+
+function fillUL(data, subject) {
+    let orderArray = data;
+    console.log(orderArray);
+        // clear prior data
+    var divQueryResults = document.getElementById("divQueryResults");
+    while (divQueryResults.firstChild) {    // remove any old data so don't get duplicates
+        divQueryResults.removeChild(divQueryResults.firstChild);
+    };
+
+    var ul = document.createElement('ul');
+   
+    orderArray.forEach(function (element,) {   // use handy array forEach method
+        var li = document.createElement('li');
+        li.innerHTML = subject + element._id + " earned " +
+                        "$" + element.totalPrice
+        ul.appendChild(li);
+    });
+    divQueryResults.appendChild(ul);
 }
